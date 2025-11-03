@@ -1,0 +1,16 @@
+import sqlite3
+
+with sqlite3.connect("MediSend.db") as db:
+    cursor=db.cursor()
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS Product_Types(
+    Barcode_ID INTERGER PRIMARY KEY,
+    Product Name TEXT);""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS Stock(
+    ID INTERGER PRIMARY KEY,
+    Product_Name TEXT,
+    Quantity INTERGER
+    Expiry_Date TEXT,
+    
+    );""")
