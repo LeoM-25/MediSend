@@ -2,10 +2,7 @@ from imports import *
 
 Window.size = (1000, 800)
 Window.clearcolor = (1, 1, 1)
-# main app
-class MediSend(App):
-    def build(self):
-        return Main()
+
 # Main window
 class Main(BoxLayout):
     def __init__(self, **kwargs):
@@ -55,5 +52,10 @@ class Main(BoxLayout):
         bottom_bar.add_widget(Button(text='Sync'))
         bottom_bar.add_widget(Button(text='Help'))
         self.add_widget(bottom_bar)
+
+# main app
+class MediSend(App):
+    def build(self):
+        return Main()
         
 MediSend().run()
