@@ -1,16 +1,12 @@
 def adding():
     import sqlite3
+    from Tables import tables
 
     with sqlite3.connect("MediSend.db") as db:
      cursor = db.cursor()
 
 
-    cursor.execute("""
-         CREATE TABLE IF NOT EXISTS A(
-                ID INTEGER NOT NULL,
-                Product TEXT PRIMARY KEY,
-                Quantity INTEGER NOT NULL,
-                Expiry Date TEXT NOT NULL);""")
+    
 
     # Placeholder
     location = input("Please enter your location: ")
@@ -21,7 +17,11 @@ def adding():
     #checks to see if database exists
     cursor.execute(f"SELECT * FROM  {location} WHERE ID=?",[barcode_data])
     result=cursor.fetchall()
+
     if result:
+     cursor.execute(f"SELECT Expiry_Date FROM {location} WHERE ID={barcode_data}")
+     for x in cursor.fetchall():
+      if x[0]==expiry:
         cursor.execute(f"SELECT Quantity FROM {location} WHERE ID={barcode_data}")
         for x in cursor.fetchall():
             quantity=x
@@ -29,11 +29,19 @@ def adding():
             quantity=quantity+1
             cursor.execute(f"UPDATE {location} SET Quantity=? WHERE ID=?",(quantity, barcode_data))
             db.commit()
-    else:
+      elif x[0]!=expiry:
+        print("hi")
         quantity=1
-        sql = f"INSERT INTO {location} (ID, Product, Quantity,Expiry Data) VALUES (?, ?, ?,?)"
-        cursor.execute(sql, (barcode_data, item, quantity,expiry))
+        sql = f"INSERT INTO {location} (ID, Product, Quantity,Expiry_Date) VALUES (?,?,?,?)"
+        cursor.execute(sql, (barcode_data, item, quantity, expiry))
         db.commit()
+    else:
+        print("hi")
+        quantity=1
+        sql = f"INSERT INTO {location} (ID, Product, Quantity,Expiry_Date) VALUES (?,?,?,?)"
+        cursor.execute(sql, (barcode_data, item, quantity, expiry))
+        db.commit()
+
 
 
 
