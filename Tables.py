@@ -7,16 +7,13 @@ def tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS A(
         ID INTEGER NOT NULL,
-        Product TEXT PRIMARY KEY,
+        Product TEXT NOT NULL,
         Quantity INTEGER NOT NULL,
-        Expiry Date TEXT NOT NULL);""")
+        Expiry_Date TEXT NOT NULL);""")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS B(
         ID INTEGER NOT NULL,
-        Product TEXT PRIMARY KEY,
+        Product TEXT NOT NULL,
         Quantity INTEGER NOT NULL,
-        Expiry Date TEXT NOT NULL);""")
-
-    
-
+        Expiry_Date TEXT NOT NULL);""")
