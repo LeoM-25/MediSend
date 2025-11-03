@@ -9,12 +9,14 @@ def adding():
          CREATE TABLE IF NOT EXISTS A(
                 ID INTEGER NOT NULL,
                 Product TEXT PRIMARY KEY,
-                Quantity INTEGER NOT NULL);""")
+                Quantity INTEGER NOT NULL,
+                Expiry Date TEXT NOT NULL);""")
 
     # Placeholder
     location = input("Please enter your location: ")
     item = input("Your item: ")
     barcode_data = int(input("Please scan your product: "))
+    expiry=input("When does your item expire")
 
     #checks to see if database exists
     cursor.execute(f"SELECT * FROM  {location} WHERE ID=?",[barcode_data])
@@ -29,8 +31,9 @@ def adding():
             db.commit()
     else:
         quantity=1
-        sql = f"INSERT INTO {location} (ID, Product, Quantity) VALUES (?, ?, ?)"
-        cursor.execute(sql, (barcode_data, item, quantity))
+        sql = f"INSERT INTO {location} (ID, Product, Quantity,Expiry Data) VALUES (?, ?, ?,?)"
+        cursor.execute(sql, (barcode_data, item, quantity,expiry))
         db.commit()
+
 
 
