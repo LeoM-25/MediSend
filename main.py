@@ -55,6 +55,5 @@ class Main(BoxLayout):
         bottom_bar.add_widget(Button(text='Sync'))
         bottom_bar.add_widget(Button(text='Help'))
         self.add_widget(bottom_bar)
-
-
+        
 MediSend().run()
