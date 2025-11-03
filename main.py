@@ -27,7 +27,7 @@ class Main(BoxLayout):
         grid.bind(minimum_height=grid.setter('height'))
 
         main_content = BoxLayout(orientation='vertical', size_hint_y=1, height=750, spacing=5, padding=10)
-        # Column headers
+        # Column headers for tble
         headers = ["Product Name","Expiry Date", "Quantity", "Dosage", "Location"]
         for header in headers:
             grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
@@ -36,7 +36,7 @@ class Main(BoxLayout):
         stock = [
             ["Paracetamol","05/11/25","2", "500mg", "Hertford"],
         ]
-        
+
         for row in stock:
             for cell in row:
                 grid.add_widget(Label(text=cell, color=(0, 0, 0, 1)))
@@ -57,5 +57,5 @@ class Main(BoxLayout):
 class MediSend(App):
     def build(self):
         return Main()
-        
+# starts running main app
 MediSend().run()
