@@ -22,3 +22,7 @@ import csv
 import datetime
 import time
 import random
+from Adding_medicine import adding
+from Tables import tables
+from Requesting import request
+from Delete import delete
