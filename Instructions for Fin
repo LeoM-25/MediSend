@@ -1,0 +1,13 @@
+25/11/2025
+
+To run the code, you need to update the main.py file on the Pi.
+
+Then just type:
+cd MediSend
+And:
+python3 main.py
+into the terminal
+
+I didn't put the modified db code on yet becuase I didn't finish it yet and we probably don't need to change anything.
+
+You could try to get the database code to output the data as a list so that it can be displayed.
