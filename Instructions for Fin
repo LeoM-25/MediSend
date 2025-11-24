@@ -8,6 +8,6 @@ And:
 python3 main.py
 into the terminal
 
-I didn't put the modified db code on yet becuase I didn't finish it yet and we probably don't need to change anything.
+I didn't put the modified .db code on yet becuase I didn't finish it yet and we probably don't need to change anything.
 
-You could try to get the database code to output the data as a list so that it can be displayed.
+You could try to get the database code to output the data as a list so that it can be displayed though.
