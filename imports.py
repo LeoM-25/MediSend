@@ -12,17 +12,17 @@ from kivy.uix.popup import Popup
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.image import Image
+from kivy.uix.splitter import Splitter
+from kivy.graphics import Color, Line
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import StringProperty, ObjectProperty, NumericProperty, ListProperty
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.checkbox import CheckBox
-from kivy.core.window import Window
 import csv
 import datetime
 import time
 import random
-from Adding_medicine import adding
-from Tables import tables
-from Requesting import request
-from Delete import delete
+# For other files
+from database import create_tables
+from database import find_item
