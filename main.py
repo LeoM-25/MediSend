@@ -2,6 +2,10 @@ from imports import *
 
 Window.size = (1000, 800)
 Window.clearcolor = (1, 1, 1)
+
+# Make tables if not exists
+create_tables()
+
 # main app
 class MediSend(App):
     def build(self):
@@ -58,13 +62,18 @@ class Main(BoxLayout):
         bottom_bar.add_widget(self.sync_button)
         self.help_button = Button(text='Help')
         bottom_bar.add_widget(self.help_button)
+
+        self.barcode_search_btn = Button(text='Search DB With Barcode ID')
+        self.barcode_search_btn.bind(on_press=self.search)
+        bottom_bar.add_widget(self.barcode_search_btn)
+
         self.add_widget(bottom_bar)
 
     def add_medicine_popup(self, *args): # Add medicine area
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
 
         layout.add_widget(Label(text='Enter medicine details:',bold=True))
-        layout.add_widget(TextInput(hint_text='Name'))
+        layout.add_widget(TextInput(hint_text='Item Name'))
         layout.add_widget(TextInput(hint_text='Expiry Date'))
         layout.add_widget(TextInput(hint_text='Quantity'))
         layout.add_widget(TextInput(hint_text='Dosage'))
@@ -83,10 +92,7 @@ class Main(BoxLayout):
 
         layout.add_widget(button_layout)
 
-        popup = Popup(title='Add Medicine',
-                      content=layout,
-                      size_hint=(0.7, 0.7))
-
+        popup = Popup(title='Add Medicine',content=layout,size_hint=(0.7, 0.7))
         close_btn.bind(on_press=popup.dismiss)
         popup.open()
 
@@ -94,10 +100,40 @@ class Main(BoxLayout):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
         close_btn = Button(text='Close', size_hint_y=None, height=40)
         layout.add_widget(close_btn)
-        popup = Popup(title='',
-                      content=layout,
-                      size_hint=(0.7, 0.7))
+        popup = Popup(title='',content=layout,size_hint=(0.7, 0.7))
         close_btn.bind(on_press=popup.dismiss)
+        popup.open()
+
+    def search(self, *args):
+        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+
+        layout.add_widget(Label(text='Enter barcode number:'))
+
+        barcode_entry = TextInput(hint_text='Barcode ID',multiline=False,input_filter='int')
+        layout.add_widget(barcode_entry)
+
+        button_layout = BoxLayout(orientation='horizontal',spacing=10,size_hint_y=None,height=40)
+
+        search_btn = Button(text='Search')
+        close_btn = Button(text='Close')
+
+        button_layout.add_widget(search_btn)
+        button_layout.add_widget(close_btn)
+
+        layout.add_widget(button_layout)
+
+        popup = Popup(title='Search',content=layout,size_hint=(0.7, 0.7)
+        )
+
+        def do_search(instance):
+            barcode = int(barcode_entry.text)
+            results = find_item(barcode)
+            print(results)
+
+        popup.dismiss()
+        search_btn.bind(on_press=do_search)
+        close_btn.bind(on_press=popup.dismiss)
+
         popup.open()
 
 MediSend().run()
