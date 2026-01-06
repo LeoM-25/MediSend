@@ -23,7 +23,7 @@ def create_tables():
         """)
 
 def find_item(barcode): # inputs barcode and outputs location + expiry
-    locations = ["A", "B"]
+    locations = ["Pharmacy_A", "Pharmacy_B"]
     found = []
 
     with sqlite3.connect(DB_NAME) as db:
