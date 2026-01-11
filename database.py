@@ -23,7 +23,7 @@ def create_tables():
         """)
 
 def find_item(barcode): # inputs barcode and outputs location + expiry
-    locations = ["Pharmacy_A", "Pharmacy_B"]
+    locations = ["A", "B"]
     found = []
 
     with sqlite3.connect(DB_NAME) as db:
@@ -40,4 +40,48 @@ def find_item(barcode): # inputs barcode and outputs location + expiry
                 found.append({"location": loc,"expiry": expiry})
 
     return found
+
+# from the adding_medicine file
+
+def add(data_to_add):
+    import sqlite3
+    # data_to_add = [item_name, expiry_date, quantity, dosage, location, barcode]
+
+    with sqlite3.connect("MediSend.db") as db:
+        cursor = db.cursor()
+        # takes from list
+        location = data_to_add[4]
+        item = data_to_add[0]
+        barcode_data = data_to_add[5]
+        expiry = data_to_add[1]
+
+        # Check if the item exists in the table
+        cursor.execute(f"SELECT Expiry_Date, Quantity FROM {location} WHERE ID=?", (barcode_data,))
+        results = cursor.fetchall()
+
+        if results:
+            updated = False
+            for exp_date, qty in results:
+                if exp_date == expiry:
+                    # update quantity
+                    new_qty = qty + 1
+                    cursor.execute(
+                        f"UPDATE {location} SET Quantity=? WHERE ID=? AND Expiry_Date=?",
+                        (new_qty, barcode_data, expiry)
+                    )
+                    db.commit()
+                    updated = True
+                    break
+            if not updated:
+                cursor.execute(
+                    f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",
+                    (barcode_data, item, 1, expiry)
+                )
+                db.commit()
+        else:
+            cursor.execute(
+                f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",
+                (barcode_data, item, 1, expiry)
+            )
+            db.commit()
 
