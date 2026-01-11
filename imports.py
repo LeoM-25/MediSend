@@ -26,3 +26,4 @@ import random
 # For other files
 from database import create_tables
 from database import find_item
+from database import add
