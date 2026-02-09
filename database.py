@@ -1,3 +1,5 @@
+
+
 import sqlite3
 # All Fin's original code as subprograms
 DB_NAME = "MediSend.db" # In case we change the name of the DB
@@ -9,7 +11,7 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS Pharmacy_A(
                 ID INTEGER, 
                 Product TEXT, 
-                Quantity INTEGER, 
+                Quantity INTEGER,
                 Expiry_Date TEXT
             )
         """)
@@ -17,7 +19,7 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS Pharmacy_B(
                 ID INTEGER, 
                 Product TEXT, 
-                Quantity INTEGER, 
+                Quantity INTEGER,
                 Expiry_Date TEXT
             )
         """)
@@ -52,7 +54,9 @@ def add(data_to_add):
         # takes from list
         location = data_to_add[4]
         item = data_to_add[0]
+        # dosage = data_to_add[3]
         barcode_data = data_to_add[5]
+
         expiry = data_to_add[1]
 
         # Check if the item exists in the table
@@ -74,14 +78,10 @@ def add(data_to_add):
                     break
             if not updated:
                 cursor.execute(
-                    f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",
+                    f"INSERT INTO {location} (ID, Product, Quantity,  Expiry_Date) VALUES (?, ?, ?, ?)",
                     (barcode_data, item, 1, expiry)
                 )
                 db.commit()
         else:
-            cursor.execute(
-                f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",
-                (barcode_data, item, 1, expiry)
-            )
+            cursor.execute(f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",(barcode_data, item, 1, expiry))
             db.commit()
-
