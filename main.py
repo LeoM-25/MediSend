@@ -16,10 +16,7 @@ class Main(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', **kwargs)
         # title text area
-        self.title_label = Label(
-            text='MediSend', bold=True, font_size='24sp',
-            size_hint_y=None, height=45, color=(0, 0, 0, 1)
-        )
+        self.title_label = Label(text='MediSend', bold=True, font_size='24sp',size_hint_y=None, height=45, color=(0, 0, 0, 1))
         self.add_widget(self.title_label)
 
         sync_text = 'Last Synced 16:38'
@@ -34,17 +31,35 @@ class Main(BoxLayout):
         self.add_widget(top_bar)
 
         # medicine list area
-        scroll = ScrollView(size_hint=(1, 1))
-        self.grid = GridLayout(cols=5, size_hint_y=None, spacing=20, padding=10)
-        self.grid.bind(minimum_height=self.grid.setter('height'))
+        # tables container (top + bottom)
+        tables_container = BoxLayout(orientation='vertical', size_hint=(1, 1), spacing=10)
 
-        # column headers
+        # top table
+        top_scroll = ScrollView(size_hint=(1, 0.5))
+        self.top_grid = GridLayout(cols=5, size_hint_y=None, spacing=20, padding=10)
+        self.top_grid.bind(minimum_height=self.top_grid.setter('height'))
+
+        # columns
         headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
         for header in headers:
-            self.grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
+            self.top_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
 
-        scroll.add_widget(self.grid)
-        self.add_widget(scroll)
+        top_scroll.add_widget(self.top_grid)
+        tables_container.add_widget(top_scroll)
+
+        # bottom table
+        bottom_scroll = ScrollView(size_hint=(1, 0.5))
+        self.bottom_grid = GridLayout(cols=5, size_hint_y=None, spacing=20, padding=10)
+        self.bottom_grid.bind(minimum_height=self.bottom_grid.setter('height'))
+
+        # columns
+        for header in headers:
+            self.bottom_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
+
+        bottom_scroll.add_widget(self.bottom_grid)
+        tables_container.add_widget(bottom_scroll)
+
+        self.add_widget(tables_container)
 
         # bottom bar
         bottom_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10, padding=5)
@@ -96,7 +111,6 @@ class Main(BoxLayout):
         popup = Popup(title='Add Medicine', content=layout, size_hint=(0.7, 0.7))
         close_btn.bind(on_press=popup.dismiss)
 
-        # collect inputs so thy can be stored as local variables
         def do_add(instance):
             item_name = name_input.text.strip()
             expiry_date = expiry_input.text.strip()
@@ -121,15 +135,27 @@ class Main(BoxLayout):
         close_btn.bind(on_press=popup.dismiss)
         popup.open()
 
-    def add_to_table(self, rows):
-        self.grid.clear_widgets()
+    def add_to_top_table(self, rows):
+        self.top_grid.clear_widgets()
+
         headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
         for header in headers:
-            self.grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
+            self.top_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
 
         for row in rows:
             for cell in row:
-                self.grid.add_widget(Label(text=str(cell), color=(0, 0, 0, 1)))
+                self.top_grid.add_widget(Label(text=str(cell), color=(0, 0, 0, 1)))
+
+    def add_to_bottom_table(self, rows):
+        self.bottom_grid.clear_widgets()
+
+        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
+        for header in headers:
+            self.bottom_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
+
+        for row in rows:
+            for cell in row:
+                self.bottom_grid.add_widget(Label(text=str(cell), color=(0, 0, 0, 1)))
 
     def search(self, *args):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
@@ -152,7 +178,7 @@ class Main(BoxLayout):
                 barcode = int(barcode_entry.text)
                 results = find_item(barcode)
 
-                # Convert results into table rows for display
+                # makes the rows
                 display_rows = []
                 for r in results:
                     display_rows.append([
@@ -171,12 +197,12 @@ class Main(BoxLayout):
         close_btn.bind(on_press=popup.dismiss)
         popup.open()
 
-    def display(self, *args):
+    def display(self, *args): # modified database code
         import sqlite3
         display_rows = []
         with sqlite3.connect("MediSend.db") as db:
             cursor = db.cursor()
-            for loc in ["A", "B"]:
+            for loc in ["A", "B"]: # can stay as a and b because the letter is appended later
                 table_name = f"Pharmacy_{loc}"
                 cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {table_name}")
                 for row in cursor.fetchall():
@@ -187,10 +213,23 @@ class Main(BoxLayout):
                         "-",  # Dosage (not stored yet)
                         loc  # Location
                     ])
+        location_rows = []
+        with sqlite3.connect("MediSend.db") as db:
+            cursor = db.cursor()
+            location = "Pharmacy_A" #CHANGE TO THE SELECTED LOCATION!!!!
+            cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {location}")
+            for row in cursor.fetchall():
+                location_rows.append([
+                    row[0],  # Product Name
+                    row[1],  # Expiry Date
+                    row[2],  # Quantity
+                    "-",  # Dosage (not stored yet)
+                    loc  # Location
+                    ])
 
-        # Update the main table display
-        self.add_to_table(display_rows)
+        # Update the tables every time the db is synced
+        self.add_to_top_table(display_rows)
+        self.add_to_bottom_table(location_rows)
 
 
 MediSend().run()
-
