@@ -13,6 +13,7 @@ from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.image import Image
 from kivy.uix.splitter import Splitter
+from kivy.uix.spinner import Spinner
 from kivy.graphics import Color, Line
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import StringProperty, ObjectProperty, NumericProperty, ListProperty
