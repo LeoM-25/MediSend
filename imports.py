@@ -20,8 +20,9 @@ from kivy.properties import StringProperty, ObjectProperty, NumericProperty, Lis
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.checkbox import CheckBox
+from kivy.uix.spinner import Spinner
 import csv
-import datetime
+from datetime import datetime
 import time
 import random
 # For other files
