@@ -1,5 +1,3 @@
-
-
 import sqlite3
 # All Fin's original code as subprograms
 DB_NAME = "MediSend.db" # In case we change the name of the DB
@@ -21,6 +19,13 @@ def create_tables():
                 Product TEXT, 
                 Quantity INTEGER,
                 Expiry_Date TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Barcode_IDs(
+                ID INTEGER, 
+                Product TEXT, 
+                Barcode_ID INTEGER
             )
         """)
 
