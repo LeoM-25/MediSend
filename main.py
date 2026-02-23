@@ -1,6 +1,6 @@
 from imports import *
 
-Window.size = (1000, 800)
+Window.size = (1000, 1000)
 Window.clearcolor = (1, 1, 1)
 
 # Make tables if not exists
@@ -9,17 +9,20 @@ create_tables()
 # main app
 class MediSend(App):
     def build(self):
-        return Main()
+        self.main_widget = Main()
+        return self.main_widget
+    def on_start(self):
+        self.main_widget.display()
 
 # Main window
-class Main(BoxLayout):
+class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettingstarted/properties.html
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', **kwargs)
         # title text area
         self.title_label = Label(text='MediSend', bold=True, font_size='24sp',size_hint_y=None, height=45, color=(0, 0, 0, 1))
         self.add_widget(self.title_label)
 
-        sync_text = 'Last Synced 16:38'
+        sync_text = 'Last Synced: Never'
         sync_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=10, spacing=10, padding=10)
         sync_bar.add_widget(Label(text=sync_text, color=(0, 0, 0, 1)))
         self.add_widget(sync_bar)
@@ -35,20 +38,29 @@ class Main(BoxLayout):
         tables_container = BoxLayout(orientation='vertical', size_hint=(1, 1), spacing=10)
 
         # top table
-        top_scroll = ScrollView(size_hint=(1, 0.5))
-        self.top_grid = GridLayout(cols=5, size_hint_y=None, spacing=20, padding=10)
+        top_scroll = ScrollView(size_hint=(1, 0.75))
+        self.top_grid = GridLayout(cols=6, size_hint_y=None, spacing=20, padding=10)
         self.top_grid.bind(minimum_height=self.top_grid.setter('height'))
 
         # columns
-        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
+        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location","Request"]
         for header in headers:
             self.top_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
 
         top_scroll.add_widget(self.top_grid)
         tables_container.add_widget(top_scroll)
 
+        # location selector
+        location_bar = AnchorLayout(anchor_x='center', anchor_y='center', size_hint_y=None, height=60)
+        location_inner = BoxLayout(orientation='horizontal', size_hint=(None, None), size=(300, 40), spacing=10)
+        location_inner.add_widget(Label(text="Select Location:", size_hint_x=None, width=140, color=(0, 0, 0, 1)))
+        self.location_spinner = Spinner(text="Select Pharmacy Location", values=("Pharmacy_A", "Pharmacy_B"), size_hint_x=None, width=200, color=(1, 1, 1))
+        location_inner.add_widget(self.location_spinner)
+        location_bar.add_widget(location_inner)
+        tables_container.add_widget(location_bar)
+
         # bottom table
-        bottom_scroll = ScrollView(size_hint=(1, 0.5))
+        bottom_scroll = ScrollView(size_hint=(1, 0.25))
         self.bottom_grid = GridLayout(cols=5, size_hint_y=None, spacing=20, padding=10)
         self.bottom_grid.bind(minimum_height=self.bottom_grid.setter('height'))
 
@@ -74,11 +86,16 @@ class Main(BoxLayout):
         self.help_button = Button(text='Help')
         bottom_bar.add_widget(self.help_button)
 
-        self.barcode_search_btn = Button(text='Search DB With Barcode ID')
+        self.barcode_search_btn = Button(text='Search DB By Barcode ID')
         self.barcode_search_btn.bind(on_press=self.search)
         bottom_bar.add_widget(self.barcode_search_btn)
 
+        self.manage_stock_btn = Button(text='Manage Stock')
+        self.manage_stock_btn.bind(on_press=self.search)
+        bottom_bar.add_widget(self.manage_stock_btn)
+
         self.add_widget(bottom_bar)
+
 
     def add_medicine_popup(self, *args):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
@@ -90,7 +107,7 @@ class Main(BoxLayout):
         expiry_input = TextInput(hint_text='Expiry Date (DD/MM/YY)')
         quantity_input = TextInput(hint_text='Quantity', input_filter='int')
         dosage_input = TextInput(hint_text='Dosage')
-        location_input = TextInput(hint_text='Location')
+        location_input = TextInput(hint_text='Location (Pharmacy_A OR Pharmacy_B)')
         barcode_input = TextInput(hint_text='Barcode')
 
         layout.add_widget(name_input)
@@ -108,7 +125,7 @@ class Main(BoxLayout):
         button_layout.add_widget(close_btn)
         layout.add_widget(button_layout)
 
-        popup = Popup(title='Add Medicine', content=layout, size_hint=(0.7, 0.7))
+        popup = Popup(title='Add Medicine', content=layout, size_hint=(0.5, 0.5))
         close_btn.bind(on_press=popup.dismiss)
 
         def do_add(instance):
@@ -138,18 +155,21 @@ class Main(BoxLayout):
     def add_to_top_table(self, rows):
         self.top_grid.clear_widgets()
 
-        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
+        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location", "Request"]
         for header in headers:
             self.top_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
 
         for row in rows:
             for cell in row:
                 self.top_grid.add_widget(Label(text=str(cell), color=(0, 0, 0, 1)))
+            request_btn = Button(text="Request", size_hint_y=None, height=30)
+            request_btn.bind(on_press=lambda btn, r=row: self.request_popup(r))
+            self.top_grid.add_widget(request_btn)
 
     def add_to_bottom_table(self, rows):
         self.bottom_grid.clear_widgets()
 
-        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage", "Location"]
+        headers = ["Product Name", "Expiry Date", "Quantity", "Dosage","Location"]
         for header in headers:
             self.bottom_grid.add_widget(Label(text=header, bold=True, color=(0, 0, 0, 1)))
 
@@ -161,7 +181,7 @@ class Main(BoxLayout):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
         layout.add_widget(Label(text='Enter barcode number:'))
 
-        barcode_entry = TextInput(hint_text='Barcode ID', multiline=False, input_filter='int')
+        barcode_entry = TextInput(hint_text='Barcode ID', multiline=False, input_filter='int', height=40)
         layout.add_widget(barcode_entry)
 
         button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
@@ -171,7 +191,7 @@ class Main(BoxLayout):
         button_layout.add_widget(close_btn)
         layout.add_widget(button_layout)
 
-        popup = Popup(title='Search', content=layout, size_hint=(0.7, 0.7))
+        popup = Popup(title='Search for Medicine', content=layout, size_hint=(0.5, 0.5))
 
         def do_search(instance):
             if barcode_entry.text.strip():
@@ -203,7 +223,7 @@ class Main(BoxLayout):
         with sqlite3.connect("MediSend.db") as db:
             cursor = db.cursor()
             for loc in ["A", "B"]: # can stay as a and b because the letter is appended later
-                table_name = f"Pharmacy_{loc}"
+                table_name = f"Pharmacy_{loc}" # HERE
                 cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {table_name}")
                 for row in cursor.fetchall():
                     display_rows.append([
@@ -216,7 +236,10 @@ class Main(BoxLayout):
         location_rows = []
         with sqlite3.connect("MediSend.db") as db:
             cursor = db.cursor()
-            location = "Pharmacy_A" #CHANGE TO THE SELECTED LOCATION!!!!
+            location = f"{self.location_spinner.text}"
+            print(location)
+            if location == "Select Pharmacy Location":
+                location = "Pharmacy_A" #CHANGES TO DEFAULT LOCATION!!!!
             cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {location}")
             for row in cursor.fetchall():
                 location_rows.append([
@@ -224,10 +247,10 @@ class Main(BoxLayout):
                     row[1],  # Expiry Date
                     row[2],  # Quantity
                     "-",  # Dosage (not stored yet)
-                    loc  # Location
+                    location  # Location
                     ])
 
-        # Update the tables every time the db is synced
+        # to update the tables every time the db is synced
         self.add_to_top_table(display_rows)
         self.add_to_bottom_table(location_rows)
 
