@@ -22,6 +22,14 @@ def create_tables():
             )
         """)
         cursor.execute("""
+        CREATE TABLE IF NOT EXISTS requests (
+            id INTEGER PRIMARY KEY,
+            item_name TEXT,
+            from_location TEXT,
+            to_location TEXT
+        )
+        """)
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS Barcode_IDs(
                 ID INTEGER, 
                 Product TEXT, 
@@ -72,7 +80,6 @@ def add(data_to_add):
             updated = False
             for exp_date, qty in results:
                 if exp_date == expiry:
-                    # update quantity
                     new_qty = qty + 1
                     cursor.execute(
                         f"UPDATE {location} SET Quantity=? WHERE ID=? AND Expiry_Date=?",
