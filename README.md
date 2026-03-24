@@ -1,10 +1,4 @@
 # Welcome to MediSend!
 MediSend is a system for logging and sharing medicine, designed to reduce wastage and improve access to medicine in places where medicine supplies are limited.
 # Running MediSend
-01/11/25: Files still need to be merged in order to work together.
-# Development Goals
-1) Functioning read/write database thorugh UI: December
-2) Radio communication system between Pis and database syncing: January
-3) Implement ML to monitor expiry dates: February
-4) Fully functioning system: End of February
-5) Improved appearance of UI, movements, button animations: End of February
+To run, main.py, database.py, imports.py and medisend.db must be intstalled. The package Kivy is needed in order to run the UI. On the raspberry pi, if all the files are in the same directory, python3 main.py should launch the program. If not, then the database may not be created and so you will need to run the subprogram make_tables() in database.py seperately.
