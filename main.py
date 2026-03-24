@@ -1,5 +1,5 @@
 from imports import *
-
+# (future reference) https://kivy.org/doc/stable/gettingstarted/properties.html
 Window.size = (1000, 1000)
 Window.clearcolor = (1, 1, 1)
 
@@ -15,7 +15,7 @@ class MediSend(App):
         self.main_widget.display()
 
 # Main window
-class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettingstarted/properties.html
+class Main(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', **kwargs)
         # title text area
@@ -26,6 +26,7 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         sync_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=10, spacing=10, padding=10)
         sync_bar.add_widget(Label(text=sync_text, color=(0, 0, 0, 1)))
         self.add_widget(sync_bar)
+
 
         # top bar
         top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=40, spacing=10, padding=5)
@@ -53,7 +54,7 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         # location selector
         location_bar = AnchorLayout(anchor_x='center', anchor_y='center', size_hint_y=None, height=60)
         location_inner = BoxLayout(orientation='horizontal', size_hint=(None, None), size=(300, 40), spacing=10)
-        location_inner.add_widget(Label(text="Select Location:", size_hint_x=None, width=140, color=(0, 0, 0, 1)))
+        location_inner.add_widget(Label(text="Select Your Location:", size_hint_x=None, width=140, color=(0, 0, 0, 1)))
         self.location_spinner = Spinner(text="Select Pharmacy Location", values=("Pharmacy_A", "Pharmacy_B"), size_hint_x=None, width=200, color=(1, 1, 1))
         location_inner.add_widget(self.location_spinner)
         location_bar.add_widget(location_inner)
@@ -91,7 +92,7 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         bottom_bar.add_widget(self.barcode_search_btn)
 
         self.manage_stock_btn = Button(text='Manage Stock')
-        self.manage_stock_btn.bind(on_press=self.search)
+        self.manage_stock_btn.bind(on_press=self.show_requests)
         bottom_bar.add_widget(self.manage_stock_btn)
 
         self.add_widget(bottom_bar)
@@ -121,8 +122,8 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         close_btn = Button(text='Close', size_hint_y=None, height=40)
         add_btn = Button(text='Add', size_hint_y=None, height=40)
 
-        button_layout.add_widget(add_btn)
         button_layout.add_widget(close_btn)
+        button_layout.add_widget(add_btn)
         layout.add_widget(button_layout)
 
         popup = Popup(title='Add Medicine', content=layout, size_hint=(0.5, 0.5))
@@ -187,11 +188,11 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
         search_btn = Button(text='Search')
         close_btn = Button(text='Close')
-        button_layout.add_widget(search_btn)
         button_layout.add_widget(close_btn)
+        button_layout.add_widget(search_btn)
         layout.add_widget(button_layout)
 
-        popup = Popup(title='Search for Medicine', content=layout, size_hint=(0.5, 0.5))
+        popup = Popup(title='Search for Medicine', content=layout, size_hint=(0.25, 0.25))
 
         def do_search(instance):
             if barcode_entry.text.strip():
@@ -217,12 +218,82 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
         close_btn.bind(on_press=popup.dismiss)
         popup.open()
 
+    def request_popup(self, r, *args):
+        item_name = r[0]
+        from_location = r[4]
+
+        to_location = self.location_spinner.text # from the user's selectiom
+        if to_location == "Select Pharmacy Location":
+            to_location = "Pharmacy_A"  # default loc
+
+        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        layout.add_widget(Label(text=f'Request Item: {item_name} from {from_location}?'))
+
+        button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
+        close_btn = Button(text='Cancel')
+        request_btn = Button(text='Request')
+
+        button_layout.add_widget(close_btn)
+        button_layout.add_widget(request_btn)
+        layout.add_widget(button_layout)
+
+        popup = Popup(title='Request Item?', content=layout, size_hint=(0.45, 0.2))
+
+        def request(instance):
+            with sqlite3.connect("MediSend.db") as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    INSERT INTO requests (item_name, from_location, to_location)
+                    VALUES (?, ?, ?)
+                """, (item_name, from_location, to_location))
+                db.commit()
+
+            print(f"Requested {item_name} from {from_location} to {to_location}")
+            popup.dismiss()
+
+        request_btn.bind(on_press=confirm_request)
+        close_btn.bind(on_press=popup.dismiss)
+
+        popup.open()
+
+    def show_requests(self, *args):
+        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+
+        grid = GridLayout(cols=3, size_hint_y=None, spacing=20, padding=10)
+        grid.bind(minimum_height=grid.setter('height'))
+
+        headers = ["Item", "From", "To"]
+        for h in headers:
+            grid.add_widget(Label(text=h, bold=True))
+
+        with sqlite3.connect("MediSend.db") as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT item_name, from_location, to_location FROM requests")
+            rows = cursor.fetchall()
+
+            for row in rows:
+                for cell in row:
+                    grid.add_widget(Label(text=str(cell)))
+
+        scroll = ScrollView()
+        scroll.add_widget(grid)
+        layout.add_widget(scroll)
+
+        # Close button
+        close_btn = Button(text="Close", size_hint_y=None, height=40)
+        layout.add_widget(close_btn)
+
+        popup = Popup(title="Manage Stock (Requests)", content=layout, size_hint=(0.6, 0.6))
+        close_btn.bind(on_press=popup.dismiss)
+
+        popup.open()
+
     def display(self, *args): # modified database code
         import sqlite3
         display_rows = []
         with sqlite3.connect("MediSend.db") as db:
             cursor = db.cursor()
-            for loc in ["A", "B"]: # can stay as a and b because the letter is appended later
+            for loc in ["A", "B"]: # full name is appended later
                 table_name = f"Pharmacy_{loc}" # HERE
                 cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {table_name}")
                 for row in cursor.fetchall():
@@ -239,14 +310,14 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
             location = f"{self.location_spinner.text}"
             print(location)
             if location == "Select Pharmacy Location":
-                location = "Pharmacy_A" #CHANGES TO DEFAULT LOCATION!!!!
+                location = "Pharmacy_A" # CHANGES TO DEFAULT LOCATION!!!!
             cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {location}")
             for row in cursor.fetchall():
                 location_rows.append([
                     row[0],  # Product Name
                     row[1],  # Expiry Date
                     row[2],  # Quantity
-                    "-",  # Dosage (not stored yet)
+                    "-",  # Dosage
                     location  # Location
                     ])
 
@@ -256,3 +327,5 @@ class Main(BoxLayout): # (future reference) https://kivy.org/doc/stable/gettings
 
 
 MediSend().run()
+
+
