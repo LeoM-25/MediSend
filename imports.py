@@ -28,4 +28,7 @@ import random
 # For other files
 from database import create_tables
 from database import find_item
+from database import add_barcode
+from database import get_product_from_barcode
 from database import add
+from database import get_waste_analysis
