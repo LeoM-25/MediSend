@@ -1,10 +1,11 @@
 from imports import *
 # (future reference) https://kivy.org/doc/stable/gettingstarted/properties.html
-Window.size = (1000, 1000)
+Window.size = (1200, 1000)
 Window.clearcolor = (1, 1, 1)
 
 # Make tables if not exists
 create_tables()
+DB_NAME = "MediSend.db"
 
 # main app
 class MediSend(App):
@@ -81,63 +82,15 @@ class Main(BoxLayout):
         bottom_bar.add_widget(self.add_button)
         self.add_button.bind(on_press=self.add_medicine_popup)
 
-        self.add_barcode_btn = Button(text='Add Barcode')
+        self.add_barcode_btn = Button(text='Add New Barcode')
         self.add_barcode_btn.bind(on_press=self.add_barcode_popup)
         bottom_bar.add_widget(self.add_barcode_btn)
-
-        self.barcode_search_btn = Button(text='Search DB By Barcode ID')
-        self.barcode_search_btn.bind(on_press=self.search)
-        bottom_bar.add_widget(self.barcode_search_btn)
 
         self.manage_stock_btn = Button(text='Manage Stock')
         self.manage_stock_btn.bind(on_press=self.show_requests)
         bottom_bar.add_widget(self.manage_stock_btn)
 
-        self.analysis_btn = Button(text='Data Analysis')
-        self.analysis_btn.bind(on_press=self.show_analysis)
-        bottom_bar.add_widget(self.analysis_btn)
-
         self.add_widget(bottom_bar)
-
-    def show_analysis(self, *args):
-        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-
-        layout.add_widget(Label(text='Waste Analysis (Expired Medicines)', bold=True))
-
-        results = get_waste_analysis()
-
-        grid = GridLayout(cols=2, size_hint_y=None, spacing=10)
-        grid.bind(minimum_height=grid.setter('height'))
-
-        # headers
-        grid.add_widget(Label(text="Medicine", bold=True))
-        grid.add_widget(Label(text="Wasted Qty", bold=True))
-
-        # top 5 worst items
-        for product, qty in results[:5]:
-            grid.add_widget(Label(text=str(product)))
-            grid.add_widget(Label(text=str(qty)))
-
-        scroll = ScrollView()
-        scroll.add_widget(grid)
-        layout.add_widget(scroll)
-
-        # suggestion text
-        if results:
-            worst = results[0][0]
-            suggestion = f"Suggestion: Order less of {worst}"
-        else:
-            suggestion = "No waste detected."
-
-        layout.add_widget(Label(text=suggestion))
-
-        close_btn = Button(text="Close", size_hint_y=None, height=40)
-        layout.add_widget(close_btn)
-
-        popup = Popup(title="Data Analysis", content=layout, size_hint=(0.6, 0.6))
-        close_btn.bind(on_press=popup.dismiss)
-
-        popup.open()
 
     def add_medicine_popup(self, *args):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
@@ -145,14 +98,13 @@ class Main(BoxLayout):
         layout.add_widget(Label(text='Enter medicine details:', bold=True))
 
         # Inputs
-        name_input = TextInput(hint_text='Item Name')
+        barcode_input = TextInput(hint_text='Barcode Number')
         expiry_input = TextInput(hint_text='Expiry Date (DD/MM/YY)')
         quantity_input = TextInput(hint_text='Quantity', input_filter='int')
         dosage_input = TextInput(hint_text='Dosage')
         location_input = Spinner(text='Select Location',values=('Pharmacy_A', 'Pharmacy_B'),height=40)
-        barcode_input = TextInput(hint_text='Barcode')
 
-        layout.add_widget(name_input)
+        layout.add_widget(barcode_input)
         layout.add_widget(expiry_input)
         layout.add_widget(quantity_input)
         layout.add_widget(dosage_input)
@@ -170,48 +122,8 @@ class Main(BoxLayout):
         popup = Popup(title='Add Medicine', content=layout, size_hint=(0.5, 0.5))
         close_btn.bind(on_press=popup.dismiss)
 
-        def show_analysis(self, *args):
-            layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-
-            layout.add_widget(Label(text='Waste Analysis (Expired Medicines)', bold=True))
-
-            results = get_waste_analysis()
-
-            grid = GridLayout(cols=2, size_hint_y=None, spacing=10)
-            grid.bind(minimum_height=grid.setter('height'))
-
-            # headers
-            grid.add_widget(Label(text="Medicine", bold=True))
-            grid.add_widget(Label(text="Wasted Qty", bold=True))
-
-            # top 5 worst items
-            for product, qty in results[:5]:
-                grid.add_widget(Label(text=str(product)))
-                grid.add_widget(Label(text=str(qty)))
-
-            scroll = ScrollView()
-            scroll.add_widget(grid)
-            layout.add_widget(scroll)
-
-            # suggestion text
-            if results:
-                worst = results[0][0]
-                suggestion = f"Suggestion: Order less of {worst}"
-            else:
-                suggestion = "No waste detected."
-
-            layout.add_widget(Label(text=suggestion))
-
-            close_btn = Button(text="Close", size_hint_y=None, height=40)
-            layout.add_widget(close_btn)
-
-            popup = Popup(title="Data Analysis", content=layout, size_hint=(0.6, 0.6))
-            close_btn.bind(on_press=popup.dismiss)
-
-            popup.open()
-
         def do_add(instance):
-            item_name = name_input.text.strip()
+            item_name = (get_product_from_barcode(barcode_input.text.strip()))
             expiry_date = expiry_input.text.strip()
             quantity = quantity_input.text.strip()
             dosage = dosage_input.text.strip()
@@ -296,65 +208,33 @@ class Main(BoxLayout):
             request_btn.bind(on_press=lambda btn, r=row: self.request_popup(r))
             self.top_grid.add_widget(request_btn)
 
-    def search(self, *args):
-        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        layout.add_widget(Label(text='Enter barcode number:'))
-
-        barcode_entry = TextInput(hint_text='Barcode ID', multiline=False, input_filter='int', height=40)
-        layout.add_widget(barcode_entry)
-
-        button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
-        search_btn = Button(text='Search')
-        close_btn = Button(text='Close')
-        button_layout.add_widget(close_btn)
-        button_layout.add_widget(search_btn)
-        layout.add_widget(button_layout)
-
-        popup = Popup(title='Search for Medicine', content=layout, size_hint=(0.25, 0.25))
-
-        def do_search(instance):
-            if barcode_entry.text.strip():
-                barcode = int(barcode_entry.text)
-                results = find_item(barcode)
-
-                display_rows = []
-                for r in results:
-                    display_rows.append([
-                        r["product"] if r["product"] else "Unknown",
-                        r["expiry"],
-                        r["quantity"],
-                        "-",
-                        r["location"]
-                    ])
-
-                print(display_rows)
-
-            popup.dismiss()
-
-        search_btn.bind(on_press=do_search)
-        close_btn.bind(on_press=popup.dismiss)
-        popup.open()
-
     def request_popup(self, r, *args):
         item_name = r[0]
         from_location = r[4]
 
-        to_location = self.location_spinner.text
-        if to_location == "All Pharmacies":
-            to_location = "Pharmacy_A"
-
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
         layout.add_widget(Label(text=f'Request Item: {item_name} from {from_location}?'))
-
+        self.location_spinner_b = Spinner(
+            text="Select Location",
+            values=("Pharmacy_A", "Pharmacy_B"),
+            size_hint_x=None,
+            width=200,
+            color=(1, 1, 1)
+        )
+        second_layout = BoxLayout(orientation='horizontal', spacing=10, padding=10)
+        second_layout.add_widget(Label(text=f'Request Item As:'))
+        second_layout.add_widget(self.location_spinner_b)
         button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
         close_btn = Button(text='Cancel')
         request_btn = Button(text='Request')
-
         button_layout.add_widget(close_btn)
         button_layout.add_widget(request_btn)
+        layout.add_widget(second_layout)
         layout.add_widget(button_layout)
-
-        popup = Popup(title='Request Item?', content=layout, size_hint=(0.45, 0.2))
+        to_location = self.location_spinner_b.text
+        if to_location == "Select Location":
+            to_location = "Pharmacy_A"
+        popup = Popup(title='Request Item?', content=layout, size_hint=(0.45, 0.25))
 
         def confirm_request(instance):
             with sqlite3.connect("MediSend.db") as db:
@@ -370,7 +250,6 @@ class Main(BoxLayout):
 
         request_btn.bind(on_press=confirm_request)
         close_btn.bind(on_press=popup.dismiss)
-
         popup.open()
 
     def show_requests(self, *args):
@@ -431,15 +310,19 @@ class Main(BoxLayout):
             barcode = int(search_text)
             results = find_item(barcode)
 
-            filtered_rows = []
-            for r in results:
-                filtered_rows.append([
+            # convert into same format
+            filtered_rows = [
+                [
                     r["product"] if r["product"] else "Unknown",
                     r["expiry"],
                     r["quantity"],
                     "-",
                     r["location"]
-                ])
+                ]
+                for r in results
+            ]
+            if selected != "All Pharmacies":
+                filtered_rows = [r for r in filtered_rows if r[4] == selected]
         else:
             search_text = search_text.lower()
 
@@ -458,7 +341,6 @@ class Main(BoxLayout):
                        or search_text in str(r[2]).lower()  # quantity
                        or search_text in str(r[4]).lower()  # location
                 ]
-
         # updates the table
         self.add_to_top_table(filtered_rows)
 
