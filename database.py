@@ -36,19 +36,22 @@ def create_tables():
         )
         """)
 
-def find_item(barcode): # inputs barcode and outputs location + expiry
+def find_item(barcode):
     locations = ["A", "B"]
     found = []
 
     product = get_product_from_barcode(barcode)
+
+    if not product:
+        return []  # barcode not known
 
     with sqlite3.connect(DB_NAME) as db:
         cursor = db.cursor()
 
         for loc in locations:
             cursor.execute(
-                f"SELECT Expiry_Date, Quantity FROM Pharmacy_{loc} WHERE ID = ?",
-                (barcode,)
+                f"SELECT Expiry_Date, Quantity FROM Pharmacy_{loc} WHERE Product = ?",
+                (product,)
             )
             results = cursor.fetchall()
 
@@ -60,7 +63,7 @@ def find_item(barcode): # inputs barcode and outputs location + expiry
                     "quantity": qty
                 })
 
-    return found # inputs barcode and outputs location + expiry
+    return found
 
 # barcode
 
@@ -70,33 +73,6 @@ def get_product_from_barcode(barcode):
         cursor.execute("SELECT Product FROM Barcode_IDs WHERE Barcode_ID=?", (barcode,))
         result = cursor.fetchone()
         return result[0] if result else None # only if there are any products
-
-def get_waste_analysis():
-    import sqlite3
-    waste_count = {}
-
-    today = datetime.now()
-
-    with sqlite3.connect("MediSend.db") as db:
-        cursor = db.cursor()
-
-        for loc in ["A", "B"]:
-            table = f"Pharmacy_{loc}"
-            cursor.execute(f"SELECT Product, Expiry_Date, Quantity FROM {table}")
-            rows = cursor.fetchall()
-
-            for product, expiry, qty in rows:
-                expiry_date = datetime.strptime(expiry, "%d/%m/%y")
-
-                if expiry_date < today:
-                    if product not in waste_count:
-                        waste_count[product] = 0
-                    waste_count[product] += qty
-
-    # sort most wasted first
-    sorted_waste = sorted(waste_count.items(), key=lambda x: x[1], reverse=True)
-
-    return sorted_waste
 
 def add_barcode(barcode, product):
     with sqlite3.connect(DB_NAME) as db:
@@ -111,15 +87,19 @@ def add_barcode(barcode, product):
 
 def add(data_to_add):
     import sqlite3
+    # data_to_add = [item_name, expiry_date, quantity, dosage, location, barcode]
 
     with sqlite3.connect("MediSend.db") as db:
         cursor = db.cursor()
+        # takes from list
         location = data_to_add[4]
         item = data_to_add[0]
+        # dosage = data_to_add[3]
         barcode_data = data_to_add[5]
 
         expiry = data_to_add[1]
 
+        # Check if the item exists in the table
         cursor.execute(f"SELECT Expiry_Date, Quantity FROM {location} WHERE ID=?", (barcode_data,))
         results = cursor.fetchall()
 
@@ -144,3 +124,4 @@ def add(data_to_add):
         else:
             cursor.execute(f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",(barcode_data, item, 1, expiry))
             db.commit()
+
