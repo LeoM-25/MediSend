@@ -111,19 +111,15 @@ def add_barcode(barcode, product):
 
 def add(data_to_add):
     import sqlite3
-    # data_to_add = [item_name, expiry_date, quantity, dosage, location, barcode]
 
     with sqlite3.connect("MediSend.db") as db:
         cursor = db.cursor()
-        # takes from list
         location = data_to_add[4]
         item = data_to_add[0]
-        # dosage = data_to_add[3]
         barcode_data = data_to_add[5]
 
         expiry = data_to_add[1]
 
-        # Check if the item exists in the table
         cursor.execute(f"SELECT Expiry_Date, Quantity FROM {location} WHERE ID=?", (barcode_data,))
         results = cursor.fetchall()
 
