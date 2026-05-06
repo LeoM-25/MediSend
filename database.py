@@ -35,6 +35,13 @@ def create_tables():
             Product TEXT
         )
         """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS waste_log (
+            id INTEGER PRIMARY KEY,
+            product TEXT,
+            quantity INTEGER
+        )
+        """)
 
 def find_item(barcode):
     locations = ["A", "B"]
@@ -124,4 +131,25 @@ def add(data_to_add):
         else:
             cursor.execute(f"INSERT INTO {location} (ID, Product, Quantity, Expiry_Date) VALUES (?, ?, ?, ?)",(barcode_data, item, 1, expiry))
             db.commit()
+
+def log_waste(product, quantity):
+    with sqlite3.connect(DB_NAME) as db:
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO waste_log (product, quantity) VALUES (?, ?)",
+            (product, quantity)
+        )
+        db.commit()
+
+def get_waste_analysis():
+    with sqlite3.connect(DB_NAME) as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT product, COUNT(*), SUM(quantity)
+            FROM waste_log
+            GROUP BY product
+            ORDER BY SUM(quantity) DESC
+        """)
+        return cursor.fetchall()
+
 
