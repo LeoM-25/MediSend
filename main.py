@@ -90,6 +90,10 @@ class Main(BoxLayout):
         self.manage_stock_btn.bind(on_press=self.show_requests)
         bottom_bar.add_widget(self.manage_stock_btn)
 
+        self.analysis_btn = Button(text='Waste Analysis')
+        self.analysis_btn.bind(on_press=self.show_analysis)
+        bottom_bar.add_widget(self.analysis_btn)
+
         self.add_widget(bottom_bar)
 
     def add_medicine_popup(self, *args):
@@ -138,6 +142,47 @@ class Main(BoxLayout):
             popup.dismiss()
 
         add_btn.bind(on_press=do_add)
+        popup.open()
+
+    def show_analysis(self, *args):
+        layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+
+        layout.add_widget(Label(text='Waste Analysis', bold=True))
+
+        results = get_waste_analysis()
+
+        grid = GridLayout(cols=3, size_hint_y=None, spacing=20, padding=20)
+        grid.bind(minimum_height=grid.setter('height'))
+
+        # headers
+        grid.add_widget(Label(text="Medicine", bold=True))
+        grid.add_widget(Label(text="Times Wasted", bold=True))
+        grid.add_widget(Label(text="Total Qty Lost", bold=True))
+
+        for product, count, total in results:
+            grid.add_widget(Label(text=str(product)))
+            grid.add_widget(Label(text=str(count)))
+            grid.add_widget(Label(text=str(total)))
+
+        scroll = ScrollView()
+        scroll.add_widget(grid)
+        layout.add_widget(scroll)
+
+        # suggestion
+        if results:
+            worst = results[0][0]
+            suggestion = f"Suggestion: Order less of {worst}"
+        else:
+            suggestion = "No waste recorded."
+
+        layout.add_widget(Label(text=suggestion))
+
+        close_btn = Button(text="Close", size_hint_y=None, height=40)
+        layout.add_widget(close_btn)
+
+        popup = Popup(title="Waste Analysis", content=layout, size_hint=(0.6, 0.6))
+        close_btn.bind(on_press=popup.dismiss)
+
         popup.open()
 
     def add_barcode_popup(self, *args):
@@ -194,7 +239,8 @@ class Main(BoxLayout):
             expiry_str = row[1]
             expiry_date = datetime.strptime(expiry_str, "%d/%m/%y")
             days_left = (expiry_date - datetime.now()).days
-
+            if days_left < 0:
+                log_waste(row[0], row[2])
             colour = (0, 0, 0, 1)
             if days_left < 7:
                 colour = (1, 0, 0, 1)
@@ -231,12 +277,10 @@ class Main(BoxLayout):
         button_layout.add_widget(request_btn)
         layout.add_widget(second_layout)
         layout.add_widget(button_layout)
-        to_location = self.location_spinner_b.text
-        if to_location == "Select Location":
-            to_location = "Pharmacy_A"
         popup = Popup(title='Request Item?', content=layout, size_hint=(0.45, 0.25))
 
         def confirm_request(instance):
+            to_location = self.location_spinner_b.text
             with sqlite3.connect("MediSend.db") as db:
                 cursor = db.cursor()
                 cursor.execute("""
@@ -245,7 +289,6 @@ class Main(BoxLayout):
                 """, (item_name, from_location, to_location))
                 db.commit()
 
-            print(f"Requested {item_name} from {from_location} to {to_location}")
             popup.dismiss()
 
         request_btn.bind(on_press=confirm_request)
@@ -255,21 +298,39 @@ class Main(BoxLayout):
     def show_requests(self, *args):
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
 
-        grid = GridLayout(cols=3, size_hint_y=None, spacing=20, padding=10)
+        grid = GridLayout(cols=4, size_hint_y=None, spacing=20, padding=10)
         grid.bind(minimum_height=grid.setter('height'))
 
-        headers = ["Item", "From", "To"]
+        headers = ["Item", "From", "To", "Approve"]
         for h in headers:
             grid.add_widget(Label(text=h, bold=True))
 
-        with sqlite3.connect("MediSend.db") as db: # From DB
+        with sqlite3.connect("MediSend.db") as db:
             cursor = db.cursor()
-            cursor.execute("SELECT item_name, from_location, to_location FROM requests")
+            cursor.execute("SELECT id, item_name, from_location, to_location FROM requests")
             rows = cursor.fetchall()
 
             for row in rows:
-                for cell in row:
-                    grid.add_widget(Label(text=str(cell)))
+                req_id, item, frm, to = row
+
+                grid.add_widget(Label(text=str(item)))
+                grid.add_widget(Label(text=str(frm)))
+                grid.add_widget(Label(text=str(to)))
+
+                approve_btn = Button(text="Approve", size_hint_y=None, height=30)
+
+                def approve_request(instance, rid=req_id):
+                    with sqlite3.connect("MediSend.db") as db:
+                        cursor = db.cursor()
+                        cursor.execute("DELETE FROM requests WHERE id=?", (rid,))
+                        db.commit()
+
+                    # refresh popup
+                    popup.dismiss()
+                    self.show_requests()
+
+                approve_btn.bind(on_press=approve_request)
+                grid.add_widget(approve_btn)
 
         scroll = ScrollView()
         scroll.add_widget(grid)
