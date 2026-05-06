@@ -31,3 +31,5 @@ from database import find_item
 from database import add_barcode
 from database import get_product_from_barcode
 from database import add
+from database import log_waste
+from database import get_waste_analysis
